@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Integration Observability QuickStart | Vitrin9</title>
+<meta name="description" content="Catch the integration failures your monitoring tools miss. Vitrin9 Integration Observability detects silent HTTP 200 rejections, reconciles source-to-destination, and seals audit-grade evidence — before month-end close." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --navy:#010C18;        /* every section background */
+    --panel:#002E3D;       /* card / panel background (matches asset page) */
+    --panel-2:#063846;     /* hover / raised */
+    --line:rgba(255,255,255,.10);
+    --line-2:rgba(255,255,255,.06);
+    --orange:#D75A2D;
+    --orange-hover:#c24b22;
+    --cyan:#00BBF6;
+    --txt:#FFFFFF;
+    --txt-soft:rgba(255,255,255,.74);
+    --txt-mute:rgba(255,255,255,.52);
+    --ok:#22B07D;
+    --warn:#E8A73B;
+    --crit:#E5484D;
+    --maxw:1120px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:"Inter",system-ui,sans-serif;
+    background:var(--navy);
+    color:var(--txt-soft);
+    -webkit-font-smoothing:antialiased;
+    line-height:1.55;
+  }
+  h1,h2,h3,h4{font-family:"Plus Jakarta Sans","Inter",sans-serif;letter-spacing:-.02em;color:var(--txt)}
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px}
+  .mono{font-family:"JetBrains Mono",ui-monospace,monospace}
+
+  .eyebrow{font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--cyan);display:inline-flex;align-items:center;gap:8px}
+
+  /* buttons */
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-weight:600;font-size:15px;height:48px;padding:0 26px;border-radius:6px;border:1px solid transparent;cursor:pointer;transition:.18s ease;white-space:nowrap}
+  .btn-primary{background:var(--orange);color:#fff}
+  .btn-primary:hover{background:var(--orange-hover);transform:translateY(-1px)}
+  .btn-ghost{background:transparent;color:var(--txt-soft);border-color:var(--line)}
+  .btn-ghost:hover{border-color:rgba(255,255,255,.4);color:#fff}
+  .btn-outline{background:transparent;color:#fff;border-color:var(--line)}
+  .btn-outline:hover{border-color:var(--cyan);color:var(--cyan)}
+  .btn-sm{height:40px;padding:0 18px;font-size:14px}
+
+  /* HEADER */
+  header{position:fixed;top:0;left:0;right:0;z-index:50;background:rgba(1,12,24,.78);backdrop-filter:blur(10px);border-bottom:1px solid var(--line-2)}
+  .nav{display:flex;align-items:center;justify-content:space-between;height:68px}
+  .logo{font-family:"Plus Jakarta Sans";font-weight:800;font-size:20px;color:#fff;letter-spacing:.02em}
+  .logo b{color:var(--orange)}
+  .nav-links{display:flex;gap:30px;align-items:center}
+  .nav-links a{color:var(--txt-soft);font-size:14.5px;font-weight:500;transition:.15s}
+  .nav-links a:hover{color:#fff}
+  .nav-cta{display:flex;gap:12px;align-items:center}
+  .burger{display:none;background:none;border:0;color:#fff;font-size:22px;cursor:pointer}
+
+  /* SECTIONS (all dark) */
+  section{padding:92px 0;position:relative}
+  .divider{border-top:1px solid var(--line-2)}
+  .sec-head{max-width:720px;margin-bottom:52px}
+  .sec-head.center{margin-left:auto;margin-right:auto;text-align:center}
+  .sec-head h2{font-size:36px;font-weight:800;line-height:1.12;margin:14px 0 14px}
+  .sec-head p{font-size:17px;color:var(--txt-soft);line-height:1.6}
+
+  /* HERO */
+  .hero{padding:150px 0 92px;overflow:hidden}
+  .hero::before{content:"";position:absolute;inset:0;background:radial-gradient(700px 340px at 82% 6%,rgba(0,187,246,.12),transparent 70%),radial-gradient(620px 360px at 6% 92%,rgba(215,90,45,.12),transparent 70%);pointer-events:none}
+  .hero .wrap{position:relative;display:grid;grid-template-columns:1.05fr .95fr;gap:56px;align-items:center}
+  .hero h1{font-size:52px;font-weight:800;line-height:1.04;margin:20px 0 20px;color:#fff}
+  .hero h1 .hl{color:var(--orange)}
+  .hero .sub{font-size:18px;line-height:1.6;color:var(--txt-soft);max-width:540px}
+  .hero-cta{display:flex;gap:14px;margin-top:32px;flex-wrap:wrap}
+  .chips{display:flex;gap:8px;margin-top:34px;flex-wrap:wrap}
+  .chip{font-size:12.5px;font-weight:600;color:var(--txt-soft);border:1px solid var(--line);border-radius:999px;padding:6px 13px;display:inline-flex;align-items:center;gap:7px}
+  .chip .dot{width:6px;height:6px;border-radius:50%;background:var(--cyan)}
+
+  /* signature cycle card */
+  .cycle-card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:22px;box-shadow:0 30px 70px rgba(0,0,0,.45)}
+  .cc-top{display:flex;align-items:center;justify-content:space-between;padding-bottom:14px;border-bottom:1px solid var(--line)}
+  .cc-flow{display:flex;align-items:center;gap:10px;font-weight:700;font-size:14px;color:#fff}
+  .cc-node{background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:7px;padding:6px 11px}
+  .cc-arrow{color:var(--txt-mute)}
+  .badge{font-size:11px;font-weight:700;padding:4px 9px;border-radius:5px;letter-spacing:.03em}
+  .badge.http{background:rgba(34,176,125,.16);color:#5fdcaa;border:1px solid rgba(34,176,125,.34)}
+  .badge.crit{background:rgba(229,72,77,.16);color:#ff8b8f;border:1px solid rgba(229,72,77,.36)}
+  .cc-row{display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:1px solid var(--line-2);font-size:14px}
+  .cc-row:last-child{border-bottom:0}
+  .cc-k{color:var(--txt-mute)}
+  .cc-v{font-weight:600;color:#fff}
+  .cc-v.miss{color:#ff8b8f}
+  .cc-verdict{margin-top:16px;background:rgba(229,72,77,.10);border:1px solid rgba(229,72,77,.30);border-radius:9px;padding:13px 15px;font-size:13.5px;line-height:1.5;color:#ffd0d1}
+  .cc-verdict b{color:#fff}
+  .cc-legend{display:flex;gap:16px;margin-top:16px;font-size:12px;color:var(--txt-mute)}
+  .cc-legend span{display:inline-flex;align-items:center;gap:6px}
+  .sw{width:9px;height:9px;border-radius:2px;display:inline-block}
+  .sw.ok{background:var(--ok)}.sw.warn{background:var(--warn)}.sw.crit{background:var(--crit)}
+
+  /* PROBLEM trio */
+  .trio{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+  .pcard{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:28px;transition:.2s}
+  .pcard:hover{transform:translateY(-3px);background:var(--panel-2);border-color:rgba(0,187,246,.4)}
+  .pcard .ic{width:44px;height:44px;border-radius:10px;background:rgba(215,90,45,.14);display:grid;place-items:center;margin-bottom:18px}
+  .pcard .ic svg{width:22px;height:22px;stroke:var(--orange)}
+  .pcard h3{font-size:19px;font-weight:700;margin-bottom:9px;color:#fff}
+  .pcard p{font-size:14.5px;color:var(--txt-soft);line-height:1.6}
+
+  /* HOW IT WORKS */
+  .pipeline{display:grid;grid-template-columns:repeat(3,1fr);gap:0;margin-top:8px}
+  .step{padding:0 30px;position:relative}
+  .step:not(:last-child)::after{content:"";position:absolute;top:26px;right:-1px;width:1px;height:calc(100% - 26px);background:var(--line-2)}
+  .step .num{width:52px;height:52px;border-radius:12px;background:var(--panel);border:1px solid var(--line);color:var(--cyan);display:grid;place-items:center;font-family:"Plus Jakarta Sans";font-weight:800;font-size:20px;margin-bottom:20px}
+  .step h3{font-size:19px;font-weight:700;margin-bottom:10px;color:#fff}
+  .step p{font-size:14.5px;color:var(--txt-soft);line-height:1.62}
+  .step .tag{display:inline-block;margin-top:14px;font-size:12px;font-weight:600;color:var(--orange);background:rgba(215,90,45,.12);padding:5px 11px;border-radius:6px}
+
+  /* pipeline trace */
+  .trace{margin-top:56px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:26px 28px}
+  .trace .tt{font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--cyan);margin-bottom:18px}
+  .trace-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .tnode{display:flex;align-items:center;gap:9px;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:8px;padding:11px 15px;font-size:13.5px;font-weight:600;color:#fff}
+  .tnode .tick{width:18px;height:18px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:700}
+  .tnode.ok .tick{background:rgba(34,176,125,.22);color:#5fdcaa}
+  .tnode.fail{border-color:rgba(229,72,77,.42);background:rgba(229,72,77,.10)}
+  .tnode.fail .tick{background:rgba(229,72,77,.28);color:#ff8b8f}
+  .tnode .ts{font-family:"JetBrains Mono";font-weight:400;font-size:11.5px;color:var(--txt-mute)}
+  .tsep{color:var(--txt-mute);font-size:16px}
+
+  /* CAPABILITIES */
+  .caps{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+  .cap{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:24px;transition:.2s}
+  .cap:hover{background:var(--panel-2);border-color:rgba(0,187,246,.4);transform:translateY(-2px)}
+  .cap .ci{width:38px;height:38px;border-radius:9px;background:rgba(0,187,246,.12);display:grid;place-items:center;margin-bottom:15px}
+  .cap .ci svg{width:19px;height:19px;stroke:var(--cyan)}
+  .cap h4{font-size:16px;font-weight:700;margin-bottom:7px;color:#fff}
+  .cap p{font-size:14px;color:var(--txt-soft);line-height:1.58}
+
+  /* TRACKS */
+  .tracks{display:grid;grid-template-columns:repeat(2,1fr);gap:26px;align-items:start}
+  .track{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--panel)}
+  .track.feature{border:2px solid var(--cyan)}
+  .track-head{padding:28px 30px 22px;border-bottom:1px solid var(--line)}
+  .track-badge{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--cyan)}
+  .track h3{font-size:26px;font-weight:800;margin:8px 0 4px;color:#fff}
+  .track .tsub{font-size:14.5px;color:var(--txt-soft)}
+  .track-timeline{display:flex;align-items:baseline;gap:10px;margin-top:20px}
+  .track-timeline .lbl{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--txt-mute)}
+  .track-timeline .val{font-family:"Plus Jakarta Sans";font-weight:800;font-size:22px;color:#fff}
+  .track-body{padding:24px 30px 28px}
+  .spec{display:flex;gap:20px;padding-bottom:18px;margin-bottom:18px;border-bottom:1px solid var(--line)}
+  .spec .s{flex:1}
+  .spec .s .n{font-family:"Plus Jakarta Sans";font-weight:800;font-size:22px;color:#fff}
+  .spec .s .t{font-size:12.5px;color:var(--txt-mute);font-weight:500}
+  .flist{list-style:none;display:flex;flex-direction:column;gap:13px}
+  .flist li{display:flex;gap:11px;font-size:14.5px;color:var(--txt-soft);line-height:1.5}
+  .flist li svg{width:18px;height:18px;flex-shrink:0;margin-top:2px;stroke:var(--ok)}
+  .deliverable{margin:24px 0;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:8px;padding:15px 17px}
+  .deliverable .dl{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--txt-mute);margin-bottom:5px}
+  .deliverable .dv{font-size:14.5px;font-weight:600;color:#fff}
+
+  /* COMPARISON */
+  .ctable{width:100%;border-collapse:collapse;margin-top:8px;overflow:hidden;border-radius:12px;border:1px solid var(--line)}
+  .ctable th,.ctable td{padding:18px 22px;text-align:left;font-size:15px;border-bottom:1px solid var(--line-2)}
+  .ctable thead th{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--txt-mute);background:rgba(255,255,255,.02)}
+  .ctable thead th.v9{color:var(--orange)}
+  .ctable td:first-child{font-weight:600;color:#fff}
+  .ctable td.old{color:var(--txt-mute)}
+  .ctable td.v9{color:#fff;font-weight:600;background:rgba(215,90,45,.07)}
+  .ctable th.v9{background:rgba(215,90,45,.07)}
+  .ctable tr:last-child td{border-bottom:0}
+
+  /* PREREQUISITES */
+  .prereq{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-top:8px}
+  .pq{display:flex;gap:16px;align-items:flex-start}
+  .pq .n{width:40px;height:40px;flex-shrink:0;border-radius:50%;border:1.5px solid var(--orange);color:var(--orange);display:grid;place-items:center;font-family:"Plus Jakarta Sans";font-weight:800;font-size:16px}
+  .pq p{font-size:15px;color:var(--txt-soft);line-height:1.5;padding-top:7px}
+
+  /* CLOSING */
+  .closing{text-align:center;overflow:hidden}
+  .closing::before{content:"";position:absolute;inset:0;background:radial-gradient(600px 300px at 50% 0,rgba(215,90,45,.16),transparent 70%)}
+  .closing .wrap{position:relative}
+  .closing h2{font-size:40px;font-weight:800;line-height:1.1;margin-bottom:16px;color:#fff}
+  .closing p{font-size:18px;color:var(--txt-soft);max-width:560px;margin:0 auto 32px}
+  .closing .hero-cta{justify-content:center}
+
+  /* FOOTER */
+  footer{background:#010912;padding:64px 0 32px;border-top:1px solid var(--line-2)}
+  .foot-top{display:grid;grid-template-columns:1.4fr 1fr 2fr;gap:40px;padding-bottom:44px;border-bottom:1px solid var(--line-2)}
+  .foot-top .blurb{font-size:14.5px;line-height:1.65;max-width:340px;margin-top:16px;color:var(--txt-soft)}
+  .foot-col h5{font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--txt-mute);margin-bottom:16px}
+  .foot-col a,.foot-col p{font-size:14px;color:var(--txt-soft);display:block;margin-bottom:9px;line-height:1.5}
+  .foot-col a:hover{color:#fff}
+  .locs{display:grid;grid-template-columns:repeat(2,1fr);gap:22px}
+  .loc .city{font-weight:600;color:#fff;font-size:14px;margin-bottom:4px}
+  .loc .addr{font-size:13px;color:var(--txt-mute);line-height:1.5}
+  .foot-bot{display:flex;justify-content:space-between;align-items:center;padding-top:26px;font-size:13px;color:var(--txt-mute);flex-wrap:wrap;gap:12px}
+
+  /* reveal */
+  .reveal{opacity:0;transform:translateY(18px);transition:opacity .6s ease,transform .6s ease}
+  .reveal.in{opacity:1;transform:none}
+  @media (prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none;transition:none}.btn:hover{transform:none}}
+
+  @media(max-width:960px){
+    .hero .wrap{grid-template-columns:1fr;gap:44px}
+    .hero h1{font-size:40px}
+    .trio,.caps,.pipeline,.prereq{grid-template-columns:1fr}
+    .step{padding:24px 0}
+    .step:not(:last-child)::after{display:none}
+    .tracks{grid-template-columns:1fr}
+    .foot-top{grid-template-columns:1fr}
+    .nav-links{display:none}
+    .burger{display:block}
+    .sec-head h2,.closing h2{font-size:30px}
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="wrap nav">
+    <div class="logo">VITRIN<b>9</b></div>
+    <nav class="nav-links">
+      <a href="https://vitrin9.com" target="_blank" rel="noopener">Home</a>
+      <a href="#problem">The Problem</a>
+      <a href="#how">How It Works</a>
+      <a href="#tracks">Tracks</a>
+      <a href="#compare">Why Us</a>
+    </nav>
+    <div class="nav-cta">
+      <a href="mailto:hello@vitrin9.com?subject=Integration%20Observability%20—%20Strategy%20Call" class="btn btn-primary btn-sm">Book Strategy Call</a>
+      <button class="burger" aria-label="Menu">☰</button>
+    </div>
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="wrap">
+    <div class="reveal in">
+      <span class="eyebrow">● Platform Asset · Integration Observability</span>
+      <h1>Your integration said <span class="hl">200 OK</span>.<br>Your books say otherwise.</h1>
+      <p class="sub">Vitrin9 Integration Observability reads what your monitoring tools ignore — the response body. We catch the silent rejections that pass as success, reconcile every record and dollar from source to destination, and seal audit-grade evidence. Before month-end finds it for you.</p>
+      <div class="hero-cta">
+        <a href="https://integration-intelligence-hub.vercel.app/work-processes/p2p" target="_blank" rel="noopener" class="btn btn-primary">See the Live Product →</a>
+        <a href="mailto:hello@vitrin9.com?subject=Integration%20Observability%20Technical%20Brief" class="btn btn-ghost">Download Technical Brief</a>
+      </div>
+      <div class="chips">
+        <span class="chip"><span class="dot"></span>Workday</span>
+        <span class="chip"><span class="dot"></span>SAP GL</span>
+        <span class="chip"><span class="dot"></span>Oracle / NetSuite</span>
+        <span class="chip"><span class="dot"></span>Integration Bus</span>
+        <span class="chip"><span class="dot"></span>SOAP / REST</span>
+      </div>
+    </div>
+
+    <div class="cycle-card reveal in">
+      <div class="cc-top">
+        <div class="cc-flow"><span class="cc-node">Workday</span><span class="cc-arrow">→</span><span class="cc-node">SAP GL</span></div>
+        <span class="badge http">HTTP 200 OK</span>
+      </div>
+      <div class="cc-row"><span class="cc-k">Cycle</span><span class="cc-v mono">APR-15 · 1 PM</span></div>
+      <div class="cc-row"><span class="cc-k">Records sent</span><span class="cc-v">6</span></div>
+      <div class="cc-row"><span class="cc-k">Records posted</span><span class="cc-v miss">0 of 6</span></div>
+      <div class="cc-row"><span class="cc-k">Variance</span><span class="cc-v miss">$48,200.00 missing</span></div>
+      <div class="cc-row"><span class="cc-k">Response body</span><span class="badge crit">SeverityCode 3</span></div>
+      <div class="cc-verdict"><b>Silent rejection caught.</b> The network returned success, but SAP rejected the journal entry — GL account 60001100 not in chart of accounts ZCOA. Every uptime monitor would have marked this green.</div>
+      <div class="cc-legend"><span><i class="sw ok"></i>Posted</span><span><i class="sw warn"></i>Variance</span><span><i class="sw crit"></i>Rejected</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- PROBLEM -->
+<section id="problem" class="divider">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="eyebrow">The Blind Spot</span>
+      <h2>Your integrations report success. Are they actually posting?</h2>
+      <p>Most integration failures never trip an alarm. The API returns 200, the dashboard stays green, and the rejection hides in a response body nobody reads — until finance can't close the month.</p>
+    </div>
+    <div class="trio">
+      <div class="pcard reveal">
+        <div class="ic"><svg fill="none" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg></div>
+        <h3>The Silent Success</h3>
+        <p>A transport-level HTTP 200 masks a payload-level rejection. The transfer "succeeded" while zero records posted downstream — no error, no alert, no trace.</p>
+      </div>
+      <div class="pcard reveal">
+        <div class="ic"><svg fill="none" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75m-16.5-3.75v3.75m16.5 0v3.75C20.25 16.153 16.556 18 12 18s-8.25-1.847-8.25-4.125v-3.75"/></svg></div>
+        <h3>The Reconciliation Gap</h3>
+        <p>Records sent rarely equal records posted. Without a source-to-destination match on counts and dollars, a $48K variance sits invisible until a manual reconciliation weeks later.</p>
+      </div>
+      <div class="pcard reveal">
+        <div class="ic"><svg fill="none" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z"/></svg></div>
+        <h3>The Audit Blind Spot</h3>
+        <p>When auditors ask what actually happened on a given run, screenshots and re-pulled logs won't hold up. There's no tamper-proof record of the raw response at the moment of failure.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section id="how" class="divider">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="eyebrow">How It Works</span>
+      <h2>From blind spot to verified posting</h2>
+      <p>Three moves turn a green-but-broken integration into a defensible record of exactly what posted, what didn't, and why.</p>
+    </div>
+    <div class="pipeline">
+      <div class="step reveal">
+        <div class="num">1</div>
+        <h3>Deep Capture</h3>
+        <p>We parse the full response body — SOAP faults, SeverityCodes, error items — not just the status line. The failures other tools stop short of are the ones we surface.</p>
+        <span class="tag">Reads the body, not the code</span>
+      </div>
+      <div class="step reveal">
+        <div class="num">2</div>
+        <h3>Three-Way Reconciliation</h3>
+        <p>Every cycle is matched across source, integration bus, and destination — on record counts and dollar totals. Any drift is flagged the moment it happens, with the exact variance.</p>
+        <span class="tag">Source → Bus → Destination</span>
+      </div>
+      <div class="step reveal">
+        <div class="num">3</div>
+        <h3>AI Root Cause + Sealed Evidence</h3>
+        <p>An AI layer translates raw logs into a plain-English cause and recommended fix, then seals a WORM evidence bundle. Reposts are idempotent — safe to replay, zero duplicate risk.</p>
+        <span class="tag">Explain · Seal · Safely repost</span>
+      </div>
+    </div>
+
+    <div class="trace reveal">
+      <div class="tt">Pipeline trace — breakage point marked</div>
+      <div class="trace-row">
+        <div class="tnode ok"><span class="tick">✓</span>PGP Decrypt <span class="ts">15:01:39</span></div>
+        <span class="tsep">→</span>
+        <div class="tnode ok"><span class="tick">✓</span>Router <span class="ts">15:01:40</span></div>
+        <span class="tsep">→</span>
+        <div class="tnode ok"><span class="tick">✓</span>Transformer <span class="ts">15:01:42</span></div>
+        <span class="tsep">→</span>
+        <div class="tnode ok"><span class="tick">✓</span>Dispatcher <span class="ts">15:01:46</span></div>
+        <span class="tsep">→</span>
+        <div class="tnode fail"><span class="tick">✕</span>SAP GL Post <span class="ts">rejected</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CAPABILITIES -->
+<section id="inside" class="divider">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="eyebrow">Inside the Platform</span>
+      <h2>What you get on day one</h2>
+      <p>The building blocks that make a green dashboard trustworthy.</p>
+    </div>
+    <div class="caps">
+      <div class="cap reveal">
+        <div class="ci"><svg fill="none" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z"/></svg></div>
+        <h4>Silent-failure detection</h4>
+        <p>Payload-level parsing catches rejections hidden behind a 200. If it didn't post, you know within the cycle.</p>
+      </div>
+      <div class="cap reveal">
+        <div class="ci"><svg fill="none" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z"/></svg></div>
+        <h4>Three-way reconciliation</h4>
+        <p>Counts and dollars matched across source, bus, and destination — with the exact variance surfaced per run.</p>
+      </div>
+      <div class="cap reveal">
+        <div class="ci"><svg fill="none" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5"/></svg></div>
+        <h4>End-to-end pipeline trace</h4>
+        <p>Every stage of the flow visualized, with the breakage point marked and timestamped for the integration team.</p>
+      </div>
+      <div class="cap reveal">
+        <div class="ci"><svg fill="none" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456Z"/></svg></div>
+        <h4>AI root-cause analysis</h4>
+        <p>Raw logs translated to a plain-English cause and a recommended fix, with a confidence and severity rating.</p>
+      </div>
+      <div class="cap reveal">
+        <div class="ci"><svg fill="none" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z"/></svg></div>
+        <h4>WORM evidence bundles</h4>
+        <p>The raw response sealed at the moment of failure, tamper-proof, with 7-year retention — audit-ready by default.</p>
+      </div>
+      <div class="cap reveal">
+        <div class="ci"><svg fill="none" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"/></svg></div>
+        <h4>Idempotent safe repost</h4>
+        <p>Once the fix lands, replay the exact entry with a retained idempotency key — an approval-gated workflow, no duplicate postings.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TRACKS -->
+<section id="tracks" class="divider">
+  <div class="wrap">
+    <div class="sec-head center reveal">
+      <span class="eyebrow">Deployment Tracks</span>
+      <h2>Don't buy a platform. Prove one on your worst integration.</h2>
+      <p>A fixed-scope engagement that stands up observability on a real, business-critical flow — and shows you what it's been hiding.</p>
+    </div>
+    <div class="tracks">
+      <div class="track reveal">
+        <div class="track-head">
+          <span class="track-badge">The Proof</span>
+          <h3>Observability Pilot</h3>
+          <p class="tsub">Best for proving the catch on one critical flow.</p>
+          <div class="track-timeline"><span class="lbl">Timeline</span><span class="val">2–3 Weeks</span></div>
+        </div>
+        <div class="track-body">
+          <div class="spec">
+            <div class="s"><div class="n">1</div><div class="t">Integration pair</div></div>
+            <div class="s"><div class="n">4/day</div><div class="t">Cycles monitored</div></div>
+          </div>
+          <ul class="flist">
+            <li><svg fill="none" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5"/></svg>Deep-capture detection on one source→destination pair</li>
+            <li><svg fill="none" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5"/></svg>Three-way reconciliation with per-cycle variance</li>
+            <li><svg fill="none" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5"/></svg>Incident view with pipeline trace + AI root cause</li>
+            <li><svg fill="none" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5"/></svg>WORM evidence bundles: included</li>
+          </ul>
+          <div class="deliverable">
+            <div class="dl">Deliverable</div>
+            <div class="dv">Live monitoring on 1 integration + sealed incident evidence</div>
+          </div>
+          <a href="mailto:hello@vitrin9.com?subject=Observability%20Pilot%20—%20Technical%20Specs" class="btn btn-outline" style="width:100%">Request Technical Specs</a>
+        </div>
+      </div>
+
+      <div class="track feature reveal">
+        <div class="track-head">
+          <span class="track-badge">The Rollout</span>
+          <h3>Observability Plus</h3>
+          <p class="tsub">Best for production-ready coverage across systems.</p>
+          <div class="track-timeline"><span class="lbl">Timeline</span><span class="val">4–6 Weeks</span></div>
+        </div>
+        <div class="track-body">
+          <div class="spec">
+            <div class="s"><div class="n">5+</div><div class="t">Integration pairs</div></div>
+            <div class="s"><div class="n">Full</div><div class="t">AI analysis layer</div></div>
+          </div>
+          <ul class="flist">
+            <li><svg fill="none" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5"/></svg>Everything in Pilot, across up to 5 integrations</li>
+            <li><svg fill="none" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5"/></svg>Idempotent safe-repost with approval workflow</li>
+            <li><svg fill="none" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5"/></svg>Grounded Q&A assistant over cycle logs</li>
+            <li><svg fill="none" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5"/></svg>Alerting + escalation routing to your teams</li>
+          </ul>
+          <div class="deliverable">
+            <div class="dl">Deliverable</div>
+            <div class="dv">Production observability + self-healing remediation</div>
+          </div>
+          <a href="mailto:hello@vitrin9.com?subject=Observability%20Plus%20—%20Technical%20Specs" class="btn btn-primary" style="width:100%">Request Technical Specs</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- COMPARISON -->
+<section id="compare" class="divider">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="eyebrow">The Difference</span>
+      <h2>Don't wait for month-end to find the break.</h2>
+      <p>Uptime and APM tools watch the pipe. We watch what came out the other end.</p>
+    </div>
+    <table class="ctable reveal">
+      <thead>
+        <tr>
+          <th>Capability</th>
+          <th>Traditional Monitoring</th>
+          <th class="v9">Vitrin9 Integration Observability</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>What it watches</td><td class="old">Uptime, latency, HTTP status</td><td class="v9">The response body — what actually posted</td></tr>
+        <tr><td>HTTP 200 masking a rejection</td><td class="old">Missed — marked green</td><td class="v9">Caught within the cycle</td></tr>
+        <tr><td>Source-to-destination reconciliation</td><td class="old">Manual, at close</td><td class="v9">Automated, every cycle</td></tr>
+        <tr><td>Audit evidence</td><td class="old">Screenshots &amp; re-pulled logs</td><td class="v9">WORM-sealed, 7-year retention</td></tr>
+        <tr><td>Remediation</td><td class="old">Manual re-run — duplicate risk</td><td class="v9">Idempotent, approval-gated repost</td></tr>
+        <tr><td>Time to detect a failed posting</td><td class="old">Days to weeks</td><td class="v9">Seconds</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- PREREQUISITES -->
+<section id="prereq" class="divider">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="eyebrow">Prerequisites for Success</span>
+      <h2>What we need to move fast</h2>
+      <p>To stand up a meaningful pilot in weeks — not quarters — we ask for three things.</p>
+    </div>
+    <div class="prereq">
+      <div class="pq reveal"><div class="n">1</div><p>Read access to one integration's responses — via the middleware, bus, or endpoint logs.</p></div>
+      <div class="pq reveal"><div class="n">2</div><p>One business-critical source→destination pair to monitor (e.g. Workday → SAP GL).</p></div>
+      <div class="pq reveal"><div class="n">3</div><p>A 60-minute discovery workshop with integration and finance stakeholders.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- CLOSING -->
+<section class="closing divider">
+  <div class="wrap reveal">
+    <h2>Ready to see what your integrations are hiding?</h2>
+    <p>Bring us your most fragile flow. We'll show you every silent rejection it's been passing off as success.</p>
+    <div class="hero-cta">
+      <a href="mailto:hello@vitrin9.com?subject=Book%20a%20Strategy%20Call%20—%20Integration%20Observability" class="btn btn-primary">Book Strategy Call</a>
+      <a href="https://integration-intelligence-hub.vercel.app/work-processes/p2p" target="_blank" rel="noopener" class="btn btn-ghost">Explore the Live Product →</a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="wrap">
+    <div class="foot-top">
+      <div>
+        <div class="logo">VITRIN<b>9</b></div>
+        <p class="blurb">Vitrin9 is a technology company with a passion for building enterprise solutions and using Artificial Intelligence (AI) to unlock hidden value for customers.</p>
+      </div>
+      <div class="foot-col">
+        <h5>Inquiries</h5>
+        <a href="tel:8667361616">(866) 736-1616</a>
+        <a href="mailto:hello@vitrin9.com">hello@vitrin9.com</a>
+      </div>
+      <div class="foot-col">
+        <h5>Locations</h5>
+        <div class="locs">
+          <div class="loc"><div class="city">New York, NY</div><div class="addr">447 Broadway, 2nd FL Suite 601, New York, NY 10013</div></div>
+          <div class="loc"><div class="city">Matawan, NJ</div><div class="addr">100 Matawan Rd., Ste. 325, Matawan, NJ 07747</div></div>
+          <div class="loc"><div class="city">Houston, TX</div><div class="addr">1000 Main St., Ste. 2300, Houston, TX 77001</div></div>
+          <div class="loc"><div class="city">San Diego, CA</div><div class="addr">550 West B St., 4th Floor, San Diego, CA 92101</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="foot-bot">
+      <span>© All Rights Reserved. VITRIN9 LLC, 2026</span>
+      <a href="https://vitrin9.com" target="_blank" rel="noopener">Privacy Policy</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  const io = new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target);} });
+  },{threshold:.12});
+  document.querySelectorAll('.reveal:not(.in)').forEach(el=>io.observe(el));
+</script>
+</body>
+</html>
